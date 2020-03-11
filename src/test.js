@@ -1,4 +1,4 @@
-import Fxb from './index'
+import {Fxb} from './index'
 
-const base = Fxb.loadFile(__dirname + '/../test_files/light.fxb');
-new Fxb(base.content)
+const base = Fxb.loadFile(__dirname + '/../test_files/base.fxb');
+console.log(base)
