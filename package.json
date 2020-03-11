@@ -1,0 +1,35 @@
+{
+  "name": "fxbjs",
+  "version": "0.0.1",
+  "description": "FXB file utility tool",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "build": "babel src --out-dir lib",
+    "test": "npm run build && node lib/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zetadrums/fxbjs.git"
+  },
+  "keywords": [
+    "FXB",
+    "VST"
+  ],
+  "author": "Guillaume Gagnaire <contact@scrola.net>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zetadrums/fxbjs/issues"
+  },
+  "homepage": "https://github.com/zetadrums/fxbjs#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.7",
+    "@babel/node": "^7.8.7",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/polyfill": "^7.8.7",
+    "@babel/preset-env": "^7.8.7"
+  }
+}
