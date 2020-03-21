@@ -1,6 +1,6 @@
 {
   "name": "fxbjs",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "FXB file utility tool",
   "main": "lib/index.js",
   "directories": {
