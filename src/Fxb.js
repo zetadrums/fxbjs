@@ -1,8 +1,5 @@
-import fs from 'fs'
 import Fxp from './Fxp'
-
-const chunkMagic = 'CcnK'
-const fxMagicWithChunk = 'FBCh'
+import FileHandler from './FileHandler'
 
 /*
 // Bank (.fxb) with chunk (magic = 'FBCh')
@@ -33,52 +30,74 @@ typedef struct {
     char future[128];
     fxProgram programs[numPrograms];  // variable no. of programs
 } fxSet;
-    */
+*/
 
-export default class Fxb {
-    byteSize = null;
-    withChunk = null;
-    version = null;
-    fxId = null;
-    fxVersion = null;
-    numPrograms = null;
-    chunkSize = null;
-    data = null;
-    programs = [];
+export default class Fxb extends FileHandler {
+    offset = 128 + 7 * 4
 
-    constructor(buffer) {
-        if (chunkMagic !== buffer.slice(0, 4).toString()) {
-            throw new Error('This is not a FBX file');
-        }
-
-        this.byteSize = buffer.readInt32BE(4);
-        this.withChunk = fxMagicWithChunk === buffer.slice(8, 12).toString()
-        this.version = buffer.readInt32BE(12);
-        this.fxId = buffer.slice(16, 20).toString();
-        this.fxVersion = buffer.readInt32BE(20);
-        this.numPrograms = buffer.readInt32BE(24);
-
-        const offset = 128 + 7 * 4;
-        if (this.withChunk) {
-            this.chunkSize = buffer.readInt32BE(offset);
-            this.data = buffer.slice(offset + 4, offset + 4 + this.chunkSize);
-        } else {
-            let chunkOffset = offset;
-            let size = 0;
-            for (let i = 0; i < this.numPrograms; i++) {
-                size = buffer.readInt32BE(chunkOffset, 4);
-                this.programs.push(new Fxp(buffer.slice(chunkOffset, chunkOffset + size + 8)));
-                chunkOffset += size + 8;
+    map = {
+        byteSize: {
+            type: 'int',
+            from: 4
+        },
+        withChunk: {
+            type: 'string',
+            from: 8,
+            to: 12,
+            filter: val => val === 'FBCh',
+            setter(val) {
+                this.withChunk = val
+                this.buffer.write(val ? 'FBCh' : 'FxBk', 8, 4)
+            }
+        },
+        version: {
+            type: 'int',
+            from: 12
+        },
+        fxId: {
+            type: 'string',
+            from: 16,
+            to: 20
+        },
+        fxVersion: {
+            type: 'int',
+            from: 20
+        },
+        numPrograms: {
+            type: 'int',
+            from: 24
+        },
+        data: {
+            getter(obj) {
+                if (obj.get('withChunk')) {
+                    const chunkSize = obj.buffer.readInt32BE(obj.get('offset'))
+                    return Buffer.from(obj.buffer.slice(obj.get('offset') + 4, obj.get('offset') + 4 + chunkSize))
+                } else {
+                    let ret = []
+                    let chunkOffset = obj.get('offset')
+                    let size = 0
+                    for (let i = 0; i < obj.get('numPrograms'); i++) {
+                        size = obj.buffer.readInt32BE(chunkOffset)
+                        ret.push(new Fxp(Buffer.from(obj.buffer.slice(chunkOffset, chunkOffset + size + 8))))
+                        chunkOffset += size + 8
+                    }
+                    return ret
+                }
+            },
+            setter(val, obj) {
+                obj.data = val
+                if (obj.get('withChunk')) {
+                    obj.buffer.writeInt32BE(val.length, obj.get('offset'))
+                    const left = obj.buffer.slice(0, obj.get('offset') + 4)
+                    obj.buffer = Buffer.concat([left, val])
+                } else {
+                    obj.set('numPrograms', val.length)
+                    obj.buffer = Buffer.concat(Array.concat([
+                        [obj.buffer.slice(0, obj.get('offset'))],
+                        val.map(v => v.buffer)
+                    ]))
+                }
             }
         }
-    }
-
-    static loadFile(path) {
-        const buffer = fs.readFileSync(path);
-        return new Fxb(buffer)
-    }
-
-    write(path) {
-        
     }
 }
